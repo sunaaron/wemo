@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wemo Device Controller</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        h1 {
+            color: white;
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .devices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            animation: fadeInUp 0.6s ease-out 0.2s both;
+        }
+
+        .device-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .device-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        .device-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .device-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .device-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .device-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+            flex: 1;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-on {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+        }
+
+        .status-off {
+            background: linear-gradient(135deg, #cbd5e0, #a0aec0);
+            color: #2d3748;
+            box-shadow: 0 4px 15px rgba(160, 174, 192, 0.3);
+        }
+
+        .device-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f7fafc;
+            border-radius: 10px;
+            transition: background 0.2s ease;
+        }
+
+        .info-row:hover {
+            background: #edf2f7;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: #718096;
+            font-size: 0.875rem;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 0.95rem;
+        }
+
+        .no-devices {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .no-devices-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .no-devices h2 {
+            color: #2d3748;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .no-devices p {
+            color: #718096;
+            font-size: 1rem;
+        }
+
+        .refresh-btn {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        /* Toggle Switch Styles */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 32px;
+            cursor: pointer;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #cbd5e0, #a0aec0);
+            border-radius: 50px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .toggle-slider:before {
+            content: "";
+            position: absolute;
+            height: 24px;
+            width: 24px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch input:checked+.toggle-slider {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+        }
+
+        .toggle-switch input:checked+.toggle-slider:before {
+            transform: translateX(28px);
+        }
+
+        .toggle-switch.loading .toggle-slider {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .toggle-switch.loading .toggle-slider:before {
+            animation: toggleLoading 1s ease-in-out infinite;
+        }
+
+        @keyframes toggleLoading {
+
+            0%,
+            100% {
+                transform: translateX(0) scale(0.9);
+            }
+
+            50% {
+                transform: translateX(14px) scale(1.1);
+            }
+        }
+
+        .toggle-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 40px;
+        }
+
+        .toggle-label.on {
+            color: #38a169;
+        }
+
+        .toggle-label.off {
+            color: #718096;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .devices-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🔌 14100 Alta Vista Wemo Device Controller</h1>
+            <p class="subtitle">Manage your smart home devices</p>
+        </header>
+
+        {% if devices %}
+        <div class="devices-grid">
+            {% for device in devices %}
+            <div class="device-card" data-device-name="{{ device.name }}">
+                <div class="device-header">
+                    <h2 class="device-name">{{ device.name }}</h2>
+                    <div class="toggle-container">
+                        <span class="toggle-label {% if device.state == 1 %}on{% else %}off{% endif %}">
+                            {{ device.state_text }}
+                        </span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" {% if device.state==1 %}checked{% endif %}
+                                onchange="toggleDevice('{{ device.name }}', this)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="device-info">
+                    <div class="info-row">
+                        <span class="info-label">Device Type</span>
+                        <span class="info-value">{{ device.type }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status Code</span>
+                        <span class="info-value device-status">{{ device.state }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-devices">
+            <div class="no-devices-icon">🔍</div>
+            <h2>No Devices Found</h2>
+            <p>No Wemo devices were discovered on your network.</p>
+            <a href="/" class="refresh-btn">🔄 Refresh</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        async function toggleDevice(deviceName, checkbox) {
+            const card = document.querySelector(`[data-device-name="${deviceName}"]`);
+            const toggleSwitch = checkbox.parentElement;
+            const label = card.querySelector('.toggle-label');
+            const statusCode = card.querySelector('.device-status');
+
+            // Add loading state
+            toggleSwitch.classList.add('loading');
+
+            // Determine new state
+            const newState = checkbox.checked ? 1 : 0;
+
+            try {
+                const response = await fetch('/toggle', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        device_name: deviceName,
+                        state: newState
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update UI with actual state from device
+                    checkbox.checked = data.state === 1;
+                    label.textContent = data.state_text;
+                    statusCode.textContent = data.state;
+
+                    // Update label color
+                    if (data.state === 1) {
+                        label.classList.remove('off');
+                        label.classList.add('on');
+                    } else {
+                        label.classList.remove('on');
+                        label.classList.add('off');
+                    }
+
+                    console.log(`Successfully toggled ${deviceName} to ${data.state_text}`);
+                } else {
+                    // Revert checkbox on error
+                    checkbox.checked = !checkbox.checked;
+                    alert(`Error: ${data.error}`);
+                    console.error('Toggle failed:', data.error);
+                }
+            } catch (error) {
+                // Revert checkbox on error
+                checkbox.checked = !checkbox.checked;
+                alert(`Failed to toggle device: ${error.message}`);
+                console.error('Toggle error:', error);
+            } finally {
+                // Remove loading state
+                toggleSwitch.classList.remove('loading');
+            }
+        }
+    </script>
+</body>
+
+</html>
